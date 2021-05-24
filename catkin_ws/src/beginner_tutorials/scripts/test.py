@@ -2,16 +2,15 @@
 
 from __future__ import print_function
 import time
-
+import threading
 import rospy
 import mavros
+from mavros import command
 
-from std_msgs.msg import String
+# from std_msgs.msg import String
 from mavros_msgs.srv import SetMode
 from mavros_msgs.srv import CommandBool, CommandTOL, CommandInt, CommandLong
 from sensor_msgs.msg import NavSatFix
-import threading
-from mavros import command
 
 def _check_ret(args, ret):
     if not ret.success:
@@ -63,7 +62,7 @@ def do_takeoff_cur_gps(args):
         done_evt.set()
         sub.unregister()
         time.sleep(20)
-        cmd_serv = rospy.ServiceProxy('mavros/cmd/command', CommandLong)
+        cmd_serv = rospy.ServiceProxy('mavros/cmd/command', CommandLong)        
 
         ret = cmd_serv(command=195,
                              param5=-35.36320329,
