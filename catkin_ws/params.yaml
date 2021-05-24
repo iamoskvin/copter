@@ -1,0 +1,12 @@
+background_b: 255
+background_g: 86
+background_r: 69
+rosdistro: 'kinetic
+
+  '
+roslaunch:
+  uris: {host_ilya_desktop__44115: 'http://ilya-desktop:44115/'}
+rosversion: '1.12.17
+
+  '
+run_id: 5bd30526-badf-11eb-b215-d03745667dbd
