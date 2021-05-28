@@ -3,126 +3,183 @@
 <head>
 <meta charset="utf-8" />
 
+<script src="https://unpkg.com/vue@next"></script>
+
 <script type="text/javascript" src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
 <script type="text/javascript" src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
 
-<script type="text/javascript" type="text/javascript">
-  // Connecting to ROS
-  // -----------------
-
-  var ros = new ROSLIB.Ros({
-    url : 'ws://localhost:9090'
-  });
-
-  ros.on('connection', function() {
-    console.log('Connected to websocket server.');
-  });
-
-  ros.on('error', function(error) {
-    console.log('Error connecting to websocket server: ', error);
-  });
-
-  ros.on('close', function() {
-    console.log('Connection to websocket server closed.');
-  });
-
-  // Publishing a Topic
-  // ------------------
-
-  var cmdVel = new ROSLIB.Topic({
-    ros : ros,
-    name : '/cmd_vel',
-    messageType : 'geometry_msgs/Twist'
-  });
-
-  var twist = new ROSLIB.Message({
-    linear : {
-      x : 0.1,
-      y : 0.2,
-      z : 0.3
-    },
-    angular : {
-      x : -0.1,
-      y : -0.2,
-      z : -0.3
-    }
-  });
-  cmdVel.publish(twist);
-
-  // Subscribing to a Topic
-  // ----------------------
-
-  var listener = new ROSLIB.Topic({
-    ros : ros,
-    name : '/listener',
-    messageType : 'std_msgs/String'
-  });
-
-  listener.subscribe(function(message) {
-    console.log('Received message on ' + listener.name + ': ' + message.data);
-    listener.unsubscribe();
-  });
-
-  // Calling a service
-  // -----------------
-
-  var addTwoIntsClient = new ROSLIB.Service({
-    ros : ros,
-    name : '/add_two_ints',
-    serviceType : 'rospy_tutorials/AddTwoInts'
-  });
-
-  var request = new ROSLIB.ServiceRequest({
-    a : 1,
-    b : 2
-  });
-
-  addTwoIntsClient.callService(request, function(result) {
-    console.log('Result for service call on '
-      + addTwoIntsClient.name
-      + ': '
-      + result.sum);
-  });
-
-  // Getting and setting a param value
-  // ---------------------------------
-
-  ros.getParams(function(params) {
-    console.log(params);
-  });
-
-  var maxVelX = new ROSLIB.Param({
-    ros : ros,
-    name : 'max_vel_y'
-  });
-
-  maxVelX.set(0.8);
-  maxVelX.get(function(value) {
-    console.log('MAX VAL: ' + value);
-  });
-
-  function manageCopter(isStart) {    
-
-    var addTwoIntsClient = new ROSLIB.Service({
-        ros : ros,
-        name : '/start_stop_copter',
-        serviceType : 'mavcmd/SetBool'
-    });
-
-    var request = new ROSLIB.ServiceRequest({data: isStart});
-
-    addTwoIntsClient.callService(request, function(result) {
-        console.log('result');
-        console.log(result);
-    });    
-  }
-</script>
 </head>
 
 <body>
-  <h1>Simple roslib Example</h1>
-  <p>Check your Web Console for output.</p>
-  <button onclick="manageCopter(true)">Запуск коптера</button>
-  <button onclick="manageCopter(false)">Посадка коптера</button>
+    <div id="app">
+        <h1>Панель управления коптером</h1>  
+        <div>
+            Текущие координаты:
+            <div v-if="currPose.position.x">
+                x: {{ currPose.position.x.toFixed(2) }}
+                y: {{ currPose.position.y.toFixed(2) }} 
+                z: {{ currPose.position.z.toFixed(2) }}
+            </div>            
+        </div>
+        <div>
+            Коннект к серверу:
+            <template v-if="connect">
+                Есть
+            </template>
+            <template v-else>
+                Нет
+            </template>
+        </div> 
+        <div>
+            <label>
+                Высота подъема
+                <input v-model="height" type="number" min="0" max="200" @change="alert(1)">
+            </label>
+            
+            <button @click="manageCopter(true)">Запуск коптера</button>
+            <button @click="manageCopter(false)">Посадка коптера</button>
+        </div>     
+        
+        <div>
+            <div>Результаты пинга 8.8.8.8</div>
+            <div>{{ pingData }}</div>
+        </div>
+        <div>
+            SpeedTest Ookla
+            <div>
+                <button @click="speedTest" :disabled="speedTestLoading">Запустить тестирование</button>
+            </div>
+            <div>
+                Результаты: <br>
+                {{ speedResults }}
+            </div>
+        </div>
+    </div>  
+  
+  <script>
+    const Copter = {
+        data() {
+            return {
+                pingData: '',
+                speedResults: '',
+                speedTestLoading: false,
+                ros: null,
+                connect: false,
+                currPose: {position: {}},
+                height: 0
+            }
+        },
+        methods: {
+            manageCopter(isStart) {   
+                var addTwoIntsClient = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/start_stop_copter',
+                    serviceType : 'mavcmd/SetBool'
+                });
+
+                var request = new ROSLIB.ServiceRequest({data: isStart});
+
+                addTwoIntsClient.callService(request, function(result) {
+                    console.log('result');
+                    console.log(result);
+                });    
+            },
+            speedTest() {
+                var self = this
+                self.speedTestLoading = true
+                self.speedResults = ''
+
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/speed_test',
+                    serviceType : 'mavcmd/SetBool'
+                });
+
+                var request = new ROSLIB.ServiceRequest({data: true});
+                
+                client.callService(request, function(result) {                      
+                    self.speedResults = result.message
+                    self.speedTestLoading = false
+                }, function(error) {
+                    // console.log(error)
+                    self.speedResults = 'Ошибка: ' + error
+                    self.speedTestLoading = false
+                });    
+            },
+            // initRos() {
+                
+            // }
+        },
+        mounted: function() {
+            var self = this
+            var robot_IP = location.hostname
+            var ros = this.ros = new ROSLIB.Ros({
+                // url : 'ws://localhost:9090'    
+                url : 'ws://' + robot_IP + ':9090'
+            });  
+
+            ros.on('connection', function() {
+                self.connect = true
+                console.log('Connected to websocket server.');
+            });
+
+            ros.on('error', function(error) {
+                self.connect = false
+                console.log('Error connecting to websocket server: ', error);
+            });
+
+            ros.on('close', function() {
+                self.connect = false
+                console.log('Connection to websocket server closed.');
+            });
+
+            var listener = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/ping_dns',
+                messageType : 'std_msgs/String'                
+            });
+
+            var self = this
+            listener.subscribe(function(message) {
+                self.pingData = message.data + ': ' + (new Date).toTimeString()                
+            });
+
+            var listenerCoord = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/mavros/local_position/pose',
+                messageType : 'geometry_msgs/PoseStamped',
+                throttle_rate: 1000
+            });
+            listenerCoord.subscribe(function(message) {
+                // console.log('coords!')
+                // console.log(message)
+                self.currPose = message.pose
+                // listenerCoord.unsubscribe()
+            });
+
+            var clientTower = new ROSLIB.Service({
+                ros : this.ros,
+                name : '/towers',
+                serviceType : 'mavcmd/SetBool'
+            });
+            var request = new ROSLIB.ServiceRequest({data: true});
+            clientTower.callService(request, function(result) {
+                console.log('result');
+                console.log(JSON.parse(result.message));
+            });  
+            
+            var cmdVel = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/web_client_connection1',
+                messageType : 'std_msgs/Bool'
+            });
+
+            var twist = new ROSLIB.Message({data: true});
+            cmdVel.publish(twist);
+        }
+    }
+
+    app = Vue.createApp(Copter).mount('#app')
+</script>
 </body>
 </html>
