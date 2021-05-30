@@ -2,57 +2,87 @@
 <html>
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <script src="https://unpkg.com/vue@next"></script>
 
 <script type="text/javascript" src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
 <script type="text/javascript" src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
 </head>
 
 <body>
-    <div id="app">
-        <h1>Панель управления коптером</h1>  
-        <div>
+    <div id="app" class="container">        
+        <h5>Панель управления коптером</h5>  
+        <div class="my-2">
+            Коннект к серверу:
+            <span v-if="connect" class="text-success">
+                Есть
+            </span>
+            <span v-else class="text-danger">
+                Нет
+            </span>
+        </div> 
+        <div class="my-3">
             Текущие координаты:
             <div v-if="currPose.position.x">
                 x: {{ currPose.position.x.toFixed(2) }}
                 y: {{ currPose.position.y.toFixed(2) }} 
                 z: {{ currPose.position.z.toFixed(2) }}
             </div>            
-        </div>
-        <div>
-            Коннект к серверу:
-            <template v-if="connect">
-                Есть
-            </template>
-            <template v-else>
-                Нет
-            </template>
+        </div>        
+        <div class="my-3">          
+            <button @click="manageCopter(true)" class="btn btn-success mr-3">Запуск коптера</button>
+            <button @click="manageCopter(false)" class="btn btn-danger">Посадка коптера</button>
         </div> 
-        <div>
-            <label>
-                Высота подъема
-                <input v-model="height" type="number" min="0" max="200" @change="alert(1)">
-            </label>
-            
-            <button @click="manageCopter(true)">Запуск коптера</button>
-            <button @click="manageCopter(false)">Посадка коптера</button>
-        </div>     
         
+        <hr class="dashed">
+
+        <div class="my-4">
+            <div>
+                Выберите вышку:
+            </div>
+            <div v-for="tower in towers" @click="selectTower(tower)" :class="{active: (selectedTower && tower.id == selectedTower.id)}">
+                {{ tower.lat }}
+                {{ tower.long }}
+                {{ tower.name }}
+                {{ tower.cell_id }}                
+            </div>
+            <div>
+                <button @click="modemConnect" :disabled="modemLoading" class="btn btn-info">Подкючиться к ОПСОС</button>
+                <div>
+                    Ответ вышки:<br>
+                    {{ towerResponse }}
+                </div>
+            </div>
+        </div>    
+        
+        <hr class="dashed">
         <div>
-            <div>Результаты пинга 8.8.8.8</div>
+            <div>Результаты пинга 8.8.8.8:</div>
             <div>{{ pingData }}</div>
         </div>
+
+        <hr class="dashed">
         <div>
             SpeedTest Ookla
             <div>
-                <button @click="speedTest" :disabled="speedTestLoading">Запустить тестирование</button>
+                <button @click="speedTest" :disabled="speedTestLoading" class="btn btn-info">Запустить тестирование</button>
             </div>
             <div>
                 Результаты: <br>
                 {{ speedResults }}
             </div>
+        </div>
+
+        <hr class="dashed">
+        <div class="my-4">
+            <div>Параметры</div>
+            <label>
+                Высота подъема
+                <input v-model="height" type="number" min="0" max="200" @input="saveHeight($event.target.value)">
+            </label>
         </div>
     </div>  
   
@@ -66,10 +96,20 @@
                 ros: null,
                 connect: false,
                 currPose: {position: {}},
-                height: 0
+                height: 0,
+                towers: [],
+                selectedTower: null,
+                towerResponse: '',
+                modemLoading: false
             }
         },
         methods: {
+            saveHeight(value) {                
+                if (value == 0) {
+                    return
+                }
+                this.saveParam('/copter/height', + value)
+            },
             manageCopter(isStart) {   
                 var addTwoIntsClient = new ROSLIB.Service({
                     ros : this.ros,
@@ -106,9 +146,39 @@
                     self.speedTestLoading = false
                 });    
             },
-            // initRos() {
+            modemConnect() {
+                this.modemLoading = true
+                var self = this
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/modem_connect',
+                    serviceType : 'mavcmd/SetBool'
+                });
+                self.towerResponse = ''
+                var request = new ROSLIB.ServiceRequest({data: true});
                 
-            // }
+                client.callService(request, function(result) {                      
+                    self.towerResponse = result.message
+                    self.modemLoading = false
+                }, function(error) {                    
+                    self.towerResponse = 'Ошибка: ' + error
+                    self.modemLoading = false
+                });    
+            },
+            saveParam(name, value) {
+                console.log('save', name, value)
+                var param = new ROSLIB.Param({
+                    ros : this.ros,
+                    name : name
+                });            
+                param.set(value, function(e) {
+                    // console.log(e)
+                });
+            },
+            selectTower(tower) {
+                this.saveParam('/tower_id', tower.id)
+                this.selectedTower = tower
+            }
         },
         mounted: function() {
             var self = this
@@ -164,22 +234,54 @@
             });
             var request = new ROSLIB.ServiceRequest({data: true});
             clientTower.callService(request, function(result) {
+                self.towers = JSON.parse(result.message)
                 console.log('result');
                 console.log(JSON.parse(result.message));
             });  
             
             var cmdVel = new ROSLIB.Topic({
                 ros : this.ros,
-                name : '/web_client_connection1',
+                name : '/web_client_connection2',
                 messageType : 'std_msgs/Bool'
             });
 
-            var twist = new ROSLIB.Message({data: true});
-            cmdVel.publish(twist);
+            var connectMsg = new ROSLIB.Message({data: true});
+
+            setInterval(function() {            
+                cmdVel.publish(connectMsg);
+                }, 1000);
+
+
+            var height = new ROSLIB.Param({
+                ros : ros,
+                name : '/copter/height'
+            });
+            
+            // height.set(20, function(e) {
+            //     console.log(e)
+            // });
+            height.get(function(value) {
+                // console.log(value)
+                self.height = value
+            });
         }
     }
 
     app = Vue.createApp(Copter).mount('#app')
 </script>
+
+<style>
+    .active {
+        color: green
+    }
+    .border-3 {
+        border-width:3px !important;
+    }
+    hr.dashed {
+        border-top: 3px dashed #999;
+    }
+
+</style>
+
 </body>
 </html>

@@ -4,20 +4,20 @@
 from __future__ import print_function
 
 import socket
-import speedtest
 import time
-import threading
+import json
 import rospy
 import mavros
-from mavros import command
+import speedtest
+import math
+import serial
 
-from std_msgs.msg import String
-# from std_msgs.msg import Bool
+from std_msgs.msg import String, Bool
 from std_srvs.srv import EmptyResponse, TriggerRequest, SetBool
-from mavros_msgs.srv import SetMode
-from mavros_msgs.srv import CommandBool, CommandTOL, CommandInt, CommandLong
-from sensor_msgs.msg import NavSatFix
-import json
+
+from mavros_msgs.srv import SetMode, CommandBool, CommandTOL, CommandInt, CommandLong
+from geometry_msgs.msg import PoseStamped
+from tf.transformations import quaternion_from_euler
 
 class InetPing:
     def __init__(self):
@@ -54,141 +54,163 @@ class SpeedTest:
         return [ True, 'Скачивание: ' + str(round(down/1024/1024)) + ' МБ, загрузка: ' + str(round(up/1024/1024)) + ' МБ' ]
 
 class CopterManager:
-    def __init__(self):
-        self.service = rospy.Service('start_stop_copter', SetBool, self.manage)        
-        self.subNavSat = None
+    def __init__(self, towerManager):
+        self.towerManager = towerManager
+        self.service = rospy.Service('start_stop_copter', SetBool, self.manage)                
+        self.pos_publisher = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)        
+        self.height = 0
+        rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.curr_height)
 
 
-    def _check_ret(self, args, ret):
-        if not ret.success:
-            pass
-            # fault("Request failed. Check mavros logs. ACK:", ret.result)
+    def takeoff(self):
+        rospy.wait_for_service('mavros/cmd/takeoff')
+        try:
+            takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
+            takeoffService(altitude = rospy.get_param('/copter/height'), min_pitch = 0.1, yaw = 0.1)
+        except rospy.ServiceException, e:
+            print("Service takeoff call failed: %s" %e)
 
-        # print_if(args.verbose, "Command ACK:", ret.result)]
+    def curr_height(self, msg):
+        self.height = msg.pose.position.z
 
-    def _find_gps_topic(self, args, op_name):
-        # XXX: since 0.13 global-position always exists. need redo that.
-        global_fix = mavros.get_topic('global_position', 'global')
-        gps_fix = mavros.get_topic('global_position', 'raw', 'fix')
+    def pos_publish(self, event = None):                                        
+        if (self.height < 1):
+            return
 
-        topics = rospy.get_published_topics()
-        # need find more elegant way
-        if len([topic for topic, type_ in topics if topic == global_fix]):
-            return global_fix
-        elif len([topic for topic, type_ in topics if topic == gps_fix]):
-            # print_if(args.verbose, "Use GPS_RAW_INT data!")
-            return gps_fix
-        elif args.any_gps:
-            t = [topic for topic, type_ in topics if type_ == 'sensor_msgs/NavSatFix']
-            if len(t) > 0:
-                print("Use", t[0], "NavSatFix topic for", op_name)
-                return t[0]
-        return None
+        goal_height = rospy.get_param('/copter/height')
+        tower_id = rospy.get_param('/tower_id')
+        goal = PoseStamped()
 
-    def do_takeoff_cur_gps(self, args):
-        done_evt = threading.Event()
-        def fix_cb(fix):
-            print("Taking-off from current coord: Lat:", fix.latitude,
-                "Long:", fix.longitude)
-            # print_if(args.verbose, "With desired Altitude:", args.altitude,
-                    #  "Yaw:", args.yaw, "Pitch angle:", args.min_pitch)
+        goal.header.seq = 1
+        goal.header.stamp = rospy.Time.now()
+        goal.header.frame_id = "map"
 
-            try:
-                ret = command.takeoff(min_pitch=args['min_pitch'],
-                                yaw=args['yaw'],
-                                latitude=fix.latitude,
-                                longitude=fix.longitude,
-                                altitude=args['altitude'])
-            except rospy.ServiceException as ex:
-                pass
-                # fault(ex)
+        goal.pose.position.x = 0.0
+        goal.pose.position.y = 0.0
+        goal.pose.position.z = goal_height
 
-            self._check_ret(args, ret)
-            done_evt.set()
-            self.subNavSat.unregister()
-            time.sleep(20)
-            cmd_serv = rospy.ServiceProxy('mavros/cmd/command', CommandLong)        
+        if (tower_id):
+            tower = self.towerManager.getTowerById(tower_id)
+            # print(tower)
+            azimuthDeg = tower['azimuth']+90 #NED to EUN
+            azimuthRad = azimuthDeg/360*math.pi
 
-            ret = cmd_serv(command=195,
-                                param5=-35.36320329,
-                                param6= 149.16504644,
-                                param7=15
-                                )
-
-            time.sleep(5)
-            ret = cmd_serv(command=195,
-                                param5=-35.36318715,
-                                param6= 149.16545067,
-                                param7=15
-                                )
-            time.sleep(3)
-
-            ret = cmd_serv(command=195,
-                                param5=-35.36320329,
-                                param6= 149.16504644,
-                                param7=15
-                                )
-
-            time.sleep(3)
-            ret = cmd_serv(command=195,
-                                param5=-35.36318715,
-                                param6= 149.16545067,
-                                param7=15
-                                )
-        topic = self._find_gps_topic(args, "takeoff")
-        if topic is None:
-            pass
-            # fault("NavSatFix topic not exist")
-                
-        self.subNavSat = rospy.Subscriber(topic, NavSatFix, fix_cb)
+            q = quaternion_from_euler(0, 0, azimuthRad)
+            goal.pose.orientation.x = q[0]
+            goal.pose.orientation.y = q[1]
+            goal.pose.orientation.z = q[2]
+            goal.pose.orientation.w = q[3]
+            
+        else:
+            goal.pose.orientation.x = 0.0
+            goal.pose.orientation.y = 0.0
+            goal.pose.orientation.z = 0.0
+            goal.pose.orientation.w = 1.0
         
-        
-        if not done_evt.wait(10.0):
-            pass
-            # fault("Something went wrong. Topic timed out.")
+        self.pos_publisher.publish(goal) 
 
     def manage(self, req):        
         set_mode = rospy.ServiceProxy('mavros/set_mode', SetMode)
-        if (req.data):            
+        if (req.data):                   
             set_mode(custom_mode='guided')
             arming = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
             arming(True)
-
-            self.do_takeoff_cur_gps({'min_pitch' : 0.1,
-                'yaw' : 0.1,
-                'altitude' : 15})
-        else:
+            self.takeoff()            
+        else:            
             set_mode(custom_mode='rtl')
         return [True, '2']
 
 class TowerList():
     def __init__(self):
         self.service = rospy.Service('towers', SetBool, self.list_towers)
+        self.towers = []
     
     def list_towers(self, req):
-        towers = [
-            {'id': 1, 'area': 9011, 'cell_id': 10091578, 'lat': 55.72534971202, 'long': 36.5391388394},
-            {'id': 2, 'area': 9011, 'cell_id': 52561, 'lat': 55.67285720976, 'long': 36.75367633687},
-            {'id': 3, 'area': 5030, 'cell_id': 198478860, 'lat': 55.63610848072, 'long': 36.71853923459},
-        ]
-        return True, json.dumps(towers)
+        # # test loaction
+        # towers = [
+        #     {'id': 1, 'area': 9011, 'cell_id': 10091578, 'lat': 55.72534971202, 'long': 36.5391388394},
+        #     {'id': 2, 'area': 9011, 'cell_id': 52561, 'lat': 55.67285720976, 'long': 36.75367633687},
+        #     {'id': 3, 'area': 5030, 'cell_id': 198478860, 'lat': 55.63610848072, 'long': 36.71853923459},
+        # ]
 
-def main():  
+        # dedovsk
+        self.towers = [
+            {'id': 1, 'area': '', 'cell_id': '', 'lat': 55.888573, 'long': 37.096052, 'azimuth': 30.444183, 'name': 'Турбодиспансер'},
+            {'id': 2, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 202.676375, 'name': 'Дедовск'},
+        ]
+        return True, json.dumps(self.towers)
+
+    def getTowerById(self, tower_id):
+        for tower in self.towers:
+            if tower['id'] == tower_id:
+                return tower
+
+class MonitorClientConnetion():
+    def __init__(self):
+        self.last_connect_time = 0
+        self.sub = rospy.Subscriber('/web_client_connection2', Bool, self.update)
+
+    def update(self, msg):        
+        self.last_connect_time = time.time()
+        # print(self.last_connect_time)
+    
+    def check(self, event = None):
+        now = time.time()
+        diff = now - self.last_connect_time
+        if diff > 20:            
+            set_mode = rospy.ServiceProxy('mavros/set_mode', SetMode)
+            set_mode(custom_mode='rtl')
+
+class ModemManager():
+    def __init__(self):
+        self.ser = serial.Serial(port='/dev/ttyUSB1', baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=1,  rtscts=False, dsrdtr=False)
+        self.service = rospy.Service('/modem_connect', SetBool, self.make_connect)
+
+    def checkModem(self):
+        cmd = "AT\r"
+        self.ser.write(cmd.encode())
+        msg = self.ser.read(64)
+        # print(msg)
+        
+    def make_connect(self, req):
+        cmd = "AT+CREG=2\r"
+        self.ser.write(cmd.encode())
+        msg = self.ser.read(64)
+        # print(msg)
+        
+        cmd = "AT+CREG?\r"
+        self.ser.write(cmd.encode())
+        msg = self.ser.read(64)
+        # print(repr(msg))
+        # msg = "\r\n+CREG: 2,0\r\n\r\nOK\r\n"
+        return [True, msg]
+
+def main():      
     rospy.init_node("copter", anonymous=True, disable_signals=True)
-    mavros.set_namespace()  
+    mavros.set_namespace() 
+
+    # parameters
+    rospy.set_param('/copter/height', 15)
     
     SpeedTest()
-    CopterManager()
-    TowerList()
+    towerManager = TowerList()
+    manager = CopterManager(towerManager)    
     ping = InetPing()
+    up = MonitorClientConnetion()
+    modemManager = ModemManager()
+    # modemManager.make_connect()
 
     rospy.Timer(rospy.Duration(1.0), ping.do_ping)
     rospy.Timer(rospy.Duration(1.0), ping.publish_ping)  
+
+    rospy.Timer(rospy.Duration(1.0), up.check)
+
+    rospy.Timer(rospy.Duration(2.0), manager.pos_publish)
    
     # rospy.spin()
 
     rate = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown():        
+    while not rospy.is_shutdown():                 
         rate.sleep()
 
 if __name__ == '__main__':
