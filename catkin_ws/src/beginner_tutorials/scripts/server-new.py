@@ -67,7 +67,7 @@ class CopterManager:
         try:
             takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
             takeoffService(altitude = rospy.get_param('/copter/height'), min_pitch = 0.1, yaw = 0.1)
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as e:
             print("Service takeoff call failed: %s" %e)
 
     def curr_height(self, msg):
@@ -100,6 +100,10 @@ class CopterManager:
             goal.pose.orientation.y = q[1]
             goal.pose.orientation.z = q[2]
             goal.pose.orientation.w = q[3]
+            # goal.pose.orientation.x = 0.0
+            # goal.pose.orientation.y = 0.0
+            # goal.pose.orientation.z = 0.0
+            # goal.pose.orientation.w = 1.0
             
         else:
             goal.pose.orientation.x = 0.0
