@@ -201,7 +201,7 @@ def main():
     manager = CopterManager(towerManager)    
     ping = InetPing()
     up = MonitorClientConnetion()
-    modemManager = ModemManager()
+    # modemManager = ModemManager()
     # modemManager.make_connect()
 
     rospy.Timer(rospy.Duration(1.0), ping.do_ping)
