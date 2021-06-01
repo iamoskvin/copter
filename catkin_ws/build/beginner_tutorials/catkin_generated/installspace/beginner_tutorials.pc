@@ -1,4 +1,4 @@
-prefix=/home/ilya/copter/catkin_ws/install
+prefix=/home/ilya/copter/code/catkin_ws/install
 
 Name: beginner_tutorials
 Description: Description of beginner_tutorials

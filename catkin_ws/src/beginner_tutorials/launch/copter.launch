@@ -1,0 +1,95 @@
+<launch>
+
+	<arg name="fcu_url" default="udp://127.0.0.1:14550@14551" />
+	<arg name="gcs_url" default="" />
+	<arg name="tgt_system" default="1" />
+	<arg name="tgt_component" default="1" />
+	<arg name="log_output" default="screen" />
+	<arg name="fcu_protocol" default="v2.0" />
+	<arg name="respawn_mavros" default="false" />
+
+	<include file="$(find mavros)/launch/node.launch">
+		<arg name="pluginlists_yaml" value="$(find mavros)/launch/apm_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find mavros)/launch/apm_config.yaml" />
+
+		<arg name="fcu_url" value="$(arg fcu_url)" />
+		<arg name="gcs_url" value="$(arg gcs_url)" />
+		<arg name="tgt_system" value="$(arg tgt_system)" />
+		<arg name="tgt_component" value="$(arg tgt_component)" />
+		<arg name="log_output" value="$(arg log_output)" />
+		<arg name="fcu_protocol" value="$(arg fcu_protocol)" />
+		<arg name="respawn_mavros" value="$(arg respawn_mavros)" />
+	</include>
+
+
+	<arg name="port" default="9090" />
+	<arg name="address" default="0.0.0.0" />
+	<arg name="ssl" default="false" />
+	<arg name="certfile" default=""/>
+	<arg name="keyfile" default="" />
+
+	<arg name="retry_startup_delay" default="5" />
+
+	<arg name="fragment_timeout" default="600" />
+	<arg name="delay_between_messages" default="0" />
+	<arg name="max_message_size" default="None" />
+	<arg name="unregister_timeout" default="10" />
+	<arg name="websocket_external_port" default="None" />
+
+	<arg name="use_compression" default="false" />
+
+	<arg name="authenticate" default="false" />
+
+	<arg name="websocket_ping_interval" default="0" />
+	<arg name="websocket_ping_timeout" default="30" />
+	<arg name="websocket_null_origin" default="true" />
+
+	<arg name="topics_glob" default="[*]" />
+	<arg name="services_glob" default="[*]" />
+	<arg name="params_glob" default="[*]" />
+	<arg name="bson_only_mode" default="false" />
+	<!-- Output: screen, log -->
+	<arg name="output" default="screen" />
+
+	<!-- Valid options for binary_encoder are "default", "b64" and "bson". -->
+	<arg unless="$(arg bson_only_mode)" name="binary_encoder" default="default"/>
+
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+		<arg name="port" default="9090" />
+		<arg name="address" default="0.0.0.0" />
+		<arg name="ssl" default="false" />
+		<arg name="certfile" default=""/>
+		<arg name="keyfile" default="" />
+
+		<arg name="retry_startup_delay" default="5" />
+
+		<arg name="fragment_timeout" default="600" />
+		<arg name="delay_between_messages" default="0" />
+		<arg name="max_message_size" default="None" />
+		<arg name="unregister_timeout" default="10" />
+		<arg name="websocket_external_port" default="None" />
+
+		<arg name="use_compression" default="false" />
+
+		<arg name="authenticate" default="false" />
+
+		<arg name="websocket_ping_interval" default="0" />
+		<arg name="websocket_ping_timeout" default="30" />
+		<arg name="websocket_null_origin" default="true" />
+
+		<arg name="topics_glob" default="[*]" />
+		<arg name="services_glob" default="[*]" />
+		<arg name="params_glob" default="[*]" />
+		<arg name="bson_only_mode" default="false" />
+		
+		<arg name="output" default="screen" />
+
+		
+		<arg unless="$(arg bson_only_mode)" name="binary_encoder" default="default"/>
+	</include>
+	
+	<param name="/copter/height" value="9" type="double" />
+
+	<node name="copter" pkg="beginner_tutorials" type="server-new.py" />
+
+</launch>

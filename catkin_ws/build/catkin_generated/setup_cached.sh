@@ -7,4 +7,5 @@
 # new environment variables
 
 # modified environment variables
-export PWD='/home/ilya/copter/catkin_ws/build'
+export PWD='/home/ilya/copter/code/catkin_ws/build'
+export ROS_PACKAGE_PATH='/home/ilya/copter/catkin_ws/src:/home/ilya/copter/code/catkin_ws/src:/opt/ros/kinetic/share'

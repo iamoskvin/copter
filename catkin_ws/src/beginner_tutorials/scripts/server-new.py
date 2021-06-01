@@ -65,6 +65,7 @@ class CopterManager:
     def takeoff(self):
         rospy.wait_for_service('mavros/cmd/takeoff')
         try:
+            rospy.wait_for_service('mavros/cmd/takeoff')
             takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
             takeoffService(altitude = rospy.get_param('/copter/height'), min_pitch = 0.1, yaw = 0.1)
         except rospy.ServiceException as e:
@@ -78,7 +79,7 @@ class CopterManager:
             return
 
         goal_height = rospy.get_param('/copter/height')
-        tower_id = rospy.get_param('/tower_id')
+        tower_id = rospy.get_param('/tower_id', None)
         goal = PoseStamped()
 
         goal.header.seq = 1
@@ -113,7 +114,9 @@ class CopterManager:
         
         self.pos_publisher.publish(goal) 
 
-    def manage(self, req):        
+    def manage(self, req):
+        rospy.wait_for_service('mavros/set_mode')        
+        rospy.wait_for_service('mavros/cmd/arming')        
         set_mode = rospy.ServiceProxy('mavros/set_mode', SetMode)
         if (req.data):                   
             set_mode(custom_mode='guided')
@@ -161,7 +164,8 @@ class MonitorClientConnetion():
     def check(self, event = None):
         now = time.time()
         diff = now - self.last_connect_time
-        if diff > 20:            
+        if diff > 20: 
+            rospy.wait_for_service('mavros/set_mode')            
             set_mode = rospy.ServiceProxy('mavros/set_mode', SetMode)
             set_mode(custom_mode='rtl')
 
@@ -191,11 +195,12 @@ class ModemManager():
 
 def main():      
     rospy.init_node("copter", anonymous=True, disable_signals=True)
-    mavros.set_namespace() 
+    # mavros.set_namespace() 
 
     # parameters
-    rospy.set_param('/copter/height', 15)
-    
+    if not rospy.get_param('/copter/height', None):
+        rospy.set_param('/copter/height', 15)
+        
     SpeedTest()
     towerManager = TowerList()
     manager = CopterManager(towerManager)    

@@ -10,7 +10,7 @@ project(beginner_tutorials)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  std_msgs,
+  std_msgs
   message_generation
 )
 
@@ -56,8 +56,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## Generate services in the 'srv' folder
 # add_service_files(
-    FILES
-    SetCopterHeight.srv
+    #FILES
+    #SetCopterHeight.srv
 # )
 
 ## Generate actions in the 'action' folder

@@ -1,2 +1,2 @@
 - setup-file:
-    local-name: /home/ilya/copter/catkin_ws/devel/setup.sh
+    local-name: /home/ilya/copter/code/catkin_ws/devel/setup.sh
