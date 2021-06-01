@@ -28,8 +28,8 @@ class InetPing:
         host = "8.8.8.8"
         port = 53
         timeout = 3 
-        self.ping_data = 'TEST'       
-        return
+        # self.ping_data = 'TEST'       
+        # return
         
         try:
             socket.setdefaulttimeout(timeout)
@@ -209,8 +209,8 @@ def main():
     # modemManager = ModemManager()
     # modemManager.make_connect()
 
-    rospy.Timer(rospy.Duration(1.0), ping.do_ping)
-    rospy.Timer(rospy.Duration(1.0), ping.publish_ping)  
+    rospy.Timer(rospy.Duration(30.0), ping.do_ping)
+    rospy.Timer(rospy.Duration(30.0), ping.publish_ping)  
 
     rospy.Timer(rospy.Duration(1.0), up.check)
 
