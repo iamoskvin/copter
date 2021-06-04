@@ -170,8 +170,8 @@ class MonitorClientConnetion():
             set_mode(custom_mode='rtl')
 
 class ModemManager():
-    def __init__(self):
-        self.ser = serial.Serial(port='/dev/ttyUSB2', baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=1,  rtscts=False, dsrdtr=False)
+    def __init__(self, port):        
+        self.ser = serial.Serial(port=port, baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=1,  rtscts=False, dsrdtr=False)
         self.service = rospy.Service('/modem_connect', SetBool, self.make_connect)
 
     def checkModem(self):
@@ -206,8 +206,10 @@ def main():
     manager = CopterManager(towerManager)    
     ping = InetPing()
     up = MonitorClientConnetion()
-    modemManager = ModemManager()
-    # modemManager.make_connect()
+
+    port = rospy.get_param('/copter/modem_dev', None)
+    if port and port != 'None':
+        modemManager = ModemManager(port)    
 
     rospy.Timer(rospy.Duration(30.0), ping.do_ping)
     rospy.Timer(rospy.Duration(30.0), ping.publish_ping)  
