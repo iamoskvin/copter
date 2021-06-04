@@ -45,12 +45,12 @@ class InetPing:
 
 class SpeedTest:
     def __init__(self):
-        self.service = rospy.Service('speed_test', SetBool, self.speed_test)
-        self.testOjb = speedtest.Speedtest()
+        self.service = rospy.Service('speed_test', SetBool, self.speed_test)        
 
     def speed_test(self, req):
-        down = self.testOjb.download()
-        up = self.testOjb.upload()
+        testOjb = speedtest.Speedtest()
+        down = testOjb.download()
+        up = testOjb.upload()
         return [ True, 'Скачивание: ' + str(round(down/1024/1024)) + ' МБ, загрузка: ' + str(round(up/1024/1024)) + ' МБ' ]
 
 class CopterManager:
