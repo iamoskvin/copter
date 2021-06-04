@@ -67,7 +67,7 @@ class CopterManager:
         try:
             rospy.wait_for_service('mavros/cmd/takeoff')
             takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
-            takeoffService(altitude = rospy.get_param('/copter/height'), min_pitch = 0.1, yaw = 0.1)
+            takeoffService(altitude = rospy.get_param('~height'), min_pitch = 0.1, yaw = 0.1)
         except rospy.ServiceException as e:
             print("Service takeoff call failed: %s" %e)
 
@@ -78,7 +78,7 @@ class CopterManager:
         if (self.height < 1):
             return
 
-        goal_height = rospy.get_param('/copter/height')
+        goal_height = rospy.get_param('~height')
         tower_id = rospy.get_param('/tower_id', None)
         goal = PoseStamped()
 
@@ -198,8 +198,8 @@ def main():
     # mavros.set_namespace() 
 
     # parameters
-    if not rospy.get_param('/copter/height', None):
-        rospy.set_param('/copter/height', 15)
+    if not rospy.get_param('~height', None):
+        rospy.set_param('~height', 15)
         
     SpeedTest()
     towerManager = TowerList()
@@ -207,7 +207,8 @@ def main():
     ping = InetPing()
     up = MonitorClientConnetion()
 
-    port = rospy.get_param('/copter/modem_dev', None)
+    port = rospy.get_param('~modem_dev', None)    
+
     if port and port != 'None':
         modemManager = ModemManager(port)    
 
