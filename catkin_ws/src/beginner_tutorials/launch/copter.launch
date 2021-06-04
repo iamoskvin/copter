@@ -67,7 +67,7 @@
 		<arg name="delay_between_messages" default="0" />
 		<arg name="max_message_size" default="None" />
 		<arg name="unregister_timeout" default="10" />
-		<arg name="websocket_external_port" default="None" />
+		<arg name="websocket_external_port" value="9090" />
 
 		<arg name="use_compression" default="false" />
 
