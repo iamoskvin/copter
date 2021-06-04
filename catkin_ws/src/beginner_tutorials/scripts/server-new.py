@@ -171,7 +171,9 @@ class MonitorClientConnetion():
     def check(self, event = None):
         now = time.time()
         diff = now - self.last_connect_time
-        if diff > 20: 
+        
+        max_time = rospy.get_param('~client_disconnect_time')
+        if diff > max_time: 
             self.copter_manager.land()
             
 
@@ -204,9 +206,13 @@ def main():
     rospy.init_node("copter", anonymous=True, disable_signals=True)
     # mavros.set_namespace() 
 
-    # parameters
+    # parameters in case of standalone script run withput launch file
+
     if not rospy.get_param('~height', None):
         rospy.set_param('~height', 15)
+    if not rospy.get_param('~client_disconnect_time', None):
+        rospy.set_param('~client_disconnect_time', 20)
+    
         
     SpeedTest()
     ping = InetPing()

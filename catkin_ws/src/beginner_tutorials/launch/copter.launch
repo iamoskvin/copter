@@ -94,6 +94,7 @@
 	<node name="copter" pkg="beginner_tutorials" type="server-new.py">
 		<param name="modem_dev" value="$(arg modem_dev)" />
 		<param name="height" value="9" type="double" />
+		<param name="client_disconnect_time" value="20" type="double" />
 	</node>
 
 </launch>
