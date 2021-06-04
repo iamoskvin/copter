@@ -30,6 +30,10 @@
             </span>
         </div> 
         <div class="my-3">
+            Режим: {{ copterMode }}
+        </div> 
+
+        <div class="my-3">
             Текущие координаты:
             <div v-if="currPose.position.x">
                 x: {{ currPose.position.x.toFixed(2) }}
@@ -105,7 +109,8 @@
                 towers: [],
                 selectedTower: null,
                 towerResponse: '',
-                modemLoading: false
+                modemLoading: false,
+                copterMode: ''
             }
         },
         methods: {
@@ -268,6 +273,17 @@
             height.get(function(value) {
                 // console.log(value)
                 self.height = value
+            });
+
+
+            var listenerMode = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/mavros/state',
+                messageType : 'mavros_msgs/State'                
+            });
+            
+            listenerMode.subscribe(function(message) {                
+                self.copterMode = message.mode
             });
         }
     }
