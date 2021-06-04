@@ -88,8 +88,12 @@
 		<arg unless="$(arg bson_only_mode)" name="binary_encoder" default="default"/>
 	</include>
 	
-	<param name="/copter/height" value="9" type="double" />
-
-	<node name="copter" pkg="beginner_tutorials" type="server-new.py" />
+	
+	<arg name="modem_dev" default="None" />
+	
+	<node name="copter" pkg="beginner_tutorials" type="server-new.py">
+		<param name="modem_dev" value="$(arg modem_dev)" />
+		<param name="height" value="9" type="double" />
+	</node>
 
 </launch>
