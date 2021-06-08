@@ -17,7 +17,8 @@ from std_srvs.srv import EmptyResponse, TriggerRequest, SetBool
 
 from mavros_msgs.srv import SetMode, CommandBool, CommandTOL, CommandInt, CommandLong
 from geometry_msgs.msg import PoseStamped
-from tf.transformations import quaternion_from_euler
+# from tf.transformations import quaternion_from_euler
+from tf_conversions import transformations
 
 class InetPing:
     def __init__(self):
@@ -103,7 +104,7 @@ class CopterManager:
             azimuthDeg = tower['azimuth']+90 #NED to EUN
             azimuthRad = azimuthDeg/360*math.pi
 
-            q = quaternion_from_euler(0, 0, azimuthRad)
+            q = transformations.quaternion_from_euler(0, 0, azimuthRad)
             goal.pose.orientation.x = q[0]
             goal.pose.orientation.y = q[1]
             goal.pose.orientation.z = q[2]
