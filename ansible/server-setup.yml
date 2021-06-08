@@ -1,0 +1,25 @@
+- hosts: all
+  remote_user: ubuntu
+  become: true
+  tasks:	
+
+  - name: Add ansible user
+    user:
+     name: ansible
+     comment: for server configuration management
+     groups: sudo
+  
+  - name: Add ansible  account to passwordless sudoers.
+    lineinfile:
+      dest: /etc/sudoers
+      regexp: '^ansible'
+      line: 'ansible ALL=(ALL) NOPASSWD: ALL'
+      state: present
+      validate: 'visudo -cf %s'
+
+  - name: Set authorized key for user ansible copying it from current user
+    authorized_key:
+      user: ansible
+      state: present
+      key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+ 

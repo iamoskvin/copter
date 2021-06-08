@@ -1,0 +1,16 @@
+server {
+        listen 80;
+        root /home/ansible/copter/catkin_ws/src;
+        index index.php index.html index.htm index.nginx-debian.html;
+        server_name {{ ansible_default_ipv4['address'] }};
+
+        location / {
+               try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \.php$ {
+               include snippets/fastcgi-php.conf;
+               fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+       }
+}
+

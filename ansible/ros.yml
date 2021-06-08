@@ -1,0 +1,15 @@
+- hosts: all
+  remote_user: ansible
+  become: true
+  vars:
+    ros_user:
+        name: ansible
+        group: ansible
+    ros_configuration: ros-base
+    ros_packages:
+      - rosbridge-server
+      - mavros
+  roles:	
+    - rarrais.ros
+    
+ 
