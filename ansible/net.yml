@@ -1,0 +1,15 @@
+- hosts: all
+  remote_user: ansible
+  become: true
+  tasks:
+    - name: install packages for wifi
+      apt:
+        name:
+          - network-manager
+          - modemmanager
+          - usb-modeswitch
+
+    - name: netplan-config
+      template:
+        src: netplan.j2
+        dest: /etc/netplan/50-cloud-init.yaml

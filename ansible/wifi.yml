@@ -1,0 +1,81 @@
+- hosts: all
+  remote_user: ansible
+  become: true
+  vars:
+    ssid: copter
+    wpa_passphrase: coptercopter
+    interface: wlan0
+    ip_server: 10.0.0.1
+    netmask: 255.255.255.0
+    network: 10.0.0.0
+    gateway: 10.0.0.1
+    broadcast: 10.0.0.255
+    ip_dhcp_low: 10.0.0.5
+    ip_dhcp_high: 10.0.0.25
+
+  tasks:
+    - name: install packages for wifi
+      apt:
+        name:
+          - dnsmasq
+          - hostapd
+
+    - name: dnsmasq.conf
+      template:
+        src: templates/dnsmasq.conf.j2
+        dest: /etc/dnsmasq.conf
+        backup: true
+      notify:
+      - restart dnsmasq
+
+    - name: hostapd.conf
+      template:
+        src: templates/hostapd.conf.j2
+        dest: /etc/hostapd/hostapd.conf
+        backup: true
+      notify:
+      - restart hostapd
+
+    - name: hostapd
+      template:
+        src: templates/hostapd.j2
+        dest: /etc/default/hostapd
+        backup: true
+      notify:
+      - restart hostapd
+
+    - name: networking
+      template:
+        src: templates/interfaces.j2
+        dest: /etc/network/interfaces
+        backup: true
+      notify:
+      - restart networking
+
+    - name: rc.local
+      template:
+        src: templates/rc.local.j2
+        dest: /etc/rc.local
+        backup: true
+      notify:
+      - restart machine
+
+  handlers:
+    - name: restart hostapd
+      service:
+        name: hostapd
+        state: restarted
+
+    - name: restart dnsmasq
+      service:
+        name: dnsmasq
+        state: restarted
+
+    - name: restart networking
+      service:
+        name: networking
+        state: restarted
+
+    - name: restart machine
+      reboot:
+        reboot_timeout: 60

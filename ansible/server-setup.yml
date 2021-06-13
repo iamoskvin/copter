@@ -8,6 +8,7 @@
      name: ansible
      comment: for server configuration management
      groups: sudo
+     shell: /bin/bash
   
   - name: Add ansible  account to passwordless sudoers.
     lineinfile:

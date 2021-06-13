@@ -1,0 +1,23 @@
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    eth0:
+      dhcp4: true
+      optional: true
+  modems:
+    USB:
+      match: {}
+      apn: internet
+      username: gdata
+      password: gdata
+      dhcp4: true
+  wifis:
+    wlan:
+      match: {}
+      dhcp4: true
+      optional: true
+      access-points:
+        "Raspberry":
+          password: "coptercopter"
+          mode: ap
