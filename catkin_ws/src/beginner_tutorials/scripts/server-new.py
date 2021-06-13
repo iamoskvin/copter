@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 
+import sys
 import socket
 import time
 import json
@@ -200,6 +201,8 @@ class ModemManager():
         msg = self.ser.read(64)
         # print(repr(msg))
         # msg = "\r\n+CREG: 2,0\r\n\r\nOK\r\n"
+        if sys.version_info[0] > 2:
+            msg = msg.decode('utf8')
         return [True, msg]
 
 def main():
