@@ -82,3 +82,21 @@
         name: serial-getty@ttyS0.service
         state: stopped
         enabled: no
+
+    - name: Create a symbolic link for python
+      ansible.builtin.file:
+        src: /usr/bin/python3
+        dest: /usr/bin/python
+        owner: root
+        group: root
+        state: link
+
+    - name: Update .bashrc with for ubuntu user
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: source /opt/ros/noetic/setup.bash
+
+    - name: Update .bashrc with for ubuntu user2
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: source /home/ansible/copter/catkin_ws/devel/setup.bash

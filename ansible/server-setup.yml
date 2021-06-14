@@ -7,7 +7,7 @@
     user:
      name: ansible
      comment: for server configuration management
-     groups: sudo
+     groups: sudo,dialout
      shell: /bin/bash
   
   - name: Add ansible  account to passwordless sudoers.
