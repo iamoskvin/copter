@@ -40,6 +40,15 @@
                 y: {{ currPose.position.y.toFixed(2) }} 
                 z: {{ currPose.position.z.toFixed(2) }}
             </div>            
+        </div>
+        <div class="my-3">
+            Текущая ориентация:
+            <div v-if="currPose.orientation.x">
+                x: {{ currPose.orientation.x.toFixed(2) }}
+                y: {{ currPose.orientation.y.toFixed(2) }} 
+                z: {{ currPose.orientation.z.toFixed(2) }}
+                w: {{ currPose.orientation.w.toFixed(2) }}
+            </div>            
         </div>        
         <div class="my-3">          
             <button @click="manageCopter(true)" class="btn btn-success mr-3">Запуск коптера</button>
@@ -111,7 +120,7 @@
                 speedTestLoading: false,
                 ros: null,
                 connect: false,
-                currPose: {position: {}},
+                currPose: {position: {}, orientation: {}},
                 height: 0,
                 towers: [],
                 selectedTower: null,

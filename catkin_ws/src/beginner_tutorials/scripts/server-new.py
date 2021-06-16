@@ -73,8 +73,9 @@ class CopterManager:
         set_mode(custom_mode='guided')
         arming = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
         arming(True)
-        try:
+        try:            
             rospy.wait_for_service('mavros/cmd/takeoff')
+            print("COPTER: takeoff started")
             takeoffService = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
             takeoffService(altitude = rospy.get_param('~height'), min_pitch = 0.1, yaw = 0.1)
         except rospy.ServiceException as e:
@@ -132,6 +133,7 @@ class CopterManager:
         return [True, '2']
     
     def land(self):
+        print("COPTER: land started")
         set_mode = rospy.ServiceProxy('mavros/set_mode', SetMode)
         set_mode(custom_mode='land')
 
