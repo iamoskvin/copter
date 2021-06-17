@@ -158,8 +158,8 @@ class TowerList():
             {'id': 3, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 0, 'name': 'Север0'},
             {'id': 4, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 90, 'name': 'Запад90'},
             {'id': 5, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 180, 'name': 'Юг180'},
-            {'id': 5, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 270, 'name': 'Восток270'},
-            {'id': 5, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': -90, 'name': 'Восток-90'},
+            {'id': 6, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 270, 'name': 'Восток270'},
+            {'id': 7, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': -90, 'name': 'Восток-90'},
 
         ]
         return True, json.dumps(self.towers)
