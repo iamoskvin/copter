@@ -61,11 +61,13 @@
             <div>
                 Выберите вышку:
             </div>
-            <div v-for="tower in towers" @click="selectTower(tower)" :class="{active: (selectedTower && tower.id == selectedTower.id)}">
-                {{ tower.lat }}
-                {{ tower.long }}
-                {{ tower.name }}
-                {{ tower.cell_id }}                
+            <div v-for="tower in towers" @click="selectTower(tower)" >
+                <button :class="{active: (selectedTower && tower.id == selectedTower.id)}" class="my-2">
+                    {{ tower.lat }}
+                    {{ tower.long }}
+                    {{ tower.name }}
+                    {{ tower.cell_id }}                
+                </button>
             </div>
             <div>
                 <button @click="modemConnect" :disabled="modemLoading" class="btn btn-info">Подкючиться к ОПСОС</button>
