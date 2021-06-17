@@ -104,7 +104,9 @@ class CopterManager:
             tower = self.towerManager.getTowerById(tower_id)
             # print(tower)
             azimuthDeg = tower['azimuth']+90 #NED to EUN
-            azimuthRad = azimuthDeg/360*math.pi
+            print(azimuthDeg)
+            azimuthRad = azimuthDeg/360.0*math.pi*2
+            print(azimuthRad)
 
             q = transformations.quaternion_from_euler(0, 0, azimuthRad)
             goal.pose.orientation.x = q[0]
