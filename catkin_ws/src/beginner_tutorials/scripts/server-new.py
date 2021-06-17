@@ -16,7 +16,7 @@ import serial
 from std_msgs.msg import String, Bool
 from std_srvs.srv import EmptyResponse, TriggerRequest, SetBool
 
-from mavros_msgs.srv import SetMode, CommandBool, CommandTOL, CommandInt, CommandLong
+from mavros_msgs.srv import SetMode, CommandBool, CommandTOL, CommandInt, CommandLong, StreamRate, StreamRateRequest
 from geometry_msgs.msg import PoseStamped
 # from tf.transformations import quaternion_from_euler
 from tf_conversions import transformations
@@ -219,6 +219,9 @@ def main():
     if not rospy.get_param('~client_disconnect_time', None):
         rospy.set_param('~client_disconnect_time', 20)
     
+    # set message rate for our controller
+    setRate = rospy.ServiceProxy('/mavros/set_stream_rate',StreamRate)
+    setRate(stream_id=StreamRateRequest.STREAM_ALL, message_rate=10, on_off=True)
         
     SpeedTest()
     ping = InetPing()
