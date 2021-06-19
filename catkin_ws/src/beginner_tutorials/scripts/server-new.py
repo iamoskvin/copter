@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import sys
+import os
 import socket
 import time
 import json
@@ -215,6 +216,12 @@ class ModemManager():
         if sys.version_info[0] > 2:
             msg = msg.decode('utf8')
         return [True, msg]
+
+class SystemdReloader():
+    def init(self):
+        self.service = rospy.Service('~restart_program', SetBool, self.restart)
+    def restart(self):
+        os.system("sudo systemctl restart copter.service")
 
 def main():
     global manager      

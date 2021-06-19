@@ -28,6 +28,9 @@
             <span v-else class="text-danger">
                 Нет
             </span>
+            <button @click="restart" class="btn btn-primary mx-2">
+                Перезапуск
+            </button>
         </div> 
         <div class="my-3">
             Режим: {{ copterMode }}
@@ -206,6 +209,19 @@
             selectTower(tower) {
                 this.saveParam('/tower_id', tower.id)
                 this.selectedTower = tower
+            },
+            restart() {
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/copter/restart_program',
+                    serviceType : 'mavcmd/SetBool'
+                });
+
+                var request = new ROSLIB.ServiceRequest({data: true});
+
+                client.callService(request, function(result) {
+                    window.location.reload()
+                });    
             }
         },
         mounted: function() {

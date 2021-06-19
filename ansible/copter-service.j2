@@ -1,0 +1,13 @@
+[Unit]
+Description=copter manager service
+After=network.target
+
+[Service]
+ExecStart=/home/ansible/copter_launch.sh
+Restart=always
+RestartSec=5
+Type=simple
+User=ansible
+
+[Install]
+WantedBy=multi-user.target
