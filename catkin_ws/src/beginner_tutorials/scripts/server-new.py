@@ -251,12 +251,15 @@ def main():
     if port and port != 'None':
         modemManager = ModemManager(port)    
 
+    SystemdReloader()
+
     rospy.Timer(rospy.Duration(30.0), ping.do_ping)
     rospy.Timer(rospy.Duration(30.0), ping.publish_ping)  
 
     rospy.Timer(rospy.Duration(1.0), up.check)
 
     rospy.Timer(rospy.Duration(2.0), manager.pos_publish)
+   
    
     # rospy.spin()
 
