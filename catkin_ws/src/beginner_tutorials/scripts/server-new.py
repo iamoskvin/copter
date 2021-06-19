@@ -220,7 +220,7 @@ class ModemManager():
 class SystemdReloader():
     def __init__(self):
         self.service = rospy.Service('~restart_program', SetBool, self.restart)
-    def restart(self):
+    def restart(self, req):
         os.system("sudo systemctl restart copter.service")
 
 def main():
