@@ -236,6 +236,7 @@ def main():
         rospy.set_param('~client_disconnect_time', 20)
     
     # set message rate for our controller
+    rospy.wait_for_service('mavros/set_stream_rate')
     setRate = rospy.ServiceProxy('/mavros/set_stream_rate',StreamRate)
     setRate(stream_id=StreamRateRequest.STREAM_ALL, message_rate=10, on_off=True)
         
