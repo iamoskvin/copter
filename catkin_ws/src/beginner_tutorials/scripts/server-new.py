@@ -210,9 +210,14 @@ class ModemManager():
         
         cmd = "AT+CREG?\r"
         self.ser.write(cmd.encode())
-        msg = self.ser.read(64)
-        # print(repr(msg))
-        # msg = "\r\n+CREG: 2,0\r\n\r\nOK\r\n"
+        msg1 = self.ser.read(64)
+
+        cmd = "AT+CSQ\r"
+        self.ser.write(cmd.encode())
+        msg2 = self.ser.read(64)
+        
+        msg = msg1+msg2
+        
         if sys.version_info[0] > 2:
             msg = msg.decode('utf8')
         return [True, msg]
