@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<!-- <script src="https://unpkg.com/vue@next"></script> -->
+<script type="text/javascript" src="/vue.global.js"></script>
+
+<!-- <script type="text/javascript" src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+<script type="text/javascript" src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script> -->
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"> -->
+
+<script type="text/javascript" src="/eventemitter2.min.js"></script>
+<script type="text/javascript" src="/roslib.min.js"></script>
+<link rel="stylesheet" href="/bootstrap.min.css">
+
+</head>
+
+<body>
+    <div id="app" class="container">        
+        <h5>Панель управления коптером</h5>  
+        <div class="my-2">
+            Коннект к серверу:
+            <span v-if="connect" class="text-success">
+                Есть
+            </span>
+            <span v-else class="text-danger">
+                Нет
+            </span>
+            <button @click="restart" class="btn btn-primary mx-2">
+                Перезапуск
+            </button>
+        </div> 
+        <div class="my-3">
+            Режим: {{ copterMode }}
+        </div> 
+
+        <div class="my-3">
+            Текущие координаты:
+            <div v-if="currPose.position.x">
+                x: {{ currPose.position.x.toFixed(2) }}
+                y: {{ currPose.position.y.toFixed(2) }} 
+                z: {{ currPose.position.z.toFixed(2) }}
+            </div>            
+        </div>
+        <div class="my-3">
+            Текущая ориентация:
+            <div v-if="currPose.orientation.x">
+                x: {{ currPose.orientation.x.toFixed(2) }}
+                y: {{ currPose.orientation.y.toFixed(2) }} 
+                z: {{ currPose.orientation.z.toFixed(2) }}
+                w: {{ currPose.orientation.w.toFixed(2) }}
+            </div>            
+        </div>        
+        <div class="my-3">          
+            <button @click="manageCopter(true)" class="btn btn-success mr-3">Запуск коптера</button>
+            <button @click="manageCopter(false)" class="btn btn-danger">Посадка коптера</button>
+        </div> 
+        
+        <hr class="dashed">
+
+        <div class="my-4">
+            <div>
+                Выберите вышку:
+            </div>
+            <div v-for="tower in towers" @click="selectTower(tower)" >
+                <button :class="{active: (selectedTower && tower.id == selectedTower.id)}" class="my-2">
+                    {{ tower.lat }}
+                    {{ tower.long }}
+                    {{ tower.name }}
+                    {{ tower.cell_id }}                
+                </button>
+            </div>
+            <div>
+                <button @click="modemConnect" :disabled="modemLoading" class="btn btn-info">Подкючиться к ОПСОС</button>
+                <div>
+                    Ответ вышки:<br>
+                    {{ towerResponse }}
+                </div>
+            </div>
+        </div>    
+        
+        <hr class="dashed">
+        <div>
+            <div>Результаты пинга 8.8.8.8:</div>
+            <div>{{ pingData }}</div>
+        </div>
+
+        <hr class="dashed">
+        <div>
+            SpeedTest Ookla
+            <div>
+                <button @click="speedTest" :disabled="speedTestLoading" class="btn btn-info">Запустить тестирование</button>
+            </div>
+            <div>
+                Результаты: <br>
+                {{ speedResults }}
+            </div>
+        </div>
+
+        <hr class="dashed">
+        <div class="my-4">
+            <div>Параметры</div>
+            <label>
+                Высота подъема
+                <input v-model="height" type="number" min="0" max="200" @input="saveHeight($event.target.value)">
+            </label>
+        </div>
+
+        <div class="my-3">
+            <a href="https://docs.google.com/document/d/1UAUAfFMbV-3-NSHJmWcMWHPkwgP6kywV_WopuPK0RA4/edit" target="_blank">
+                Инструкция
+            </a>
+        </div>
+        
+    </div>  
+  
+  <script>
+    const Copter = {
+        data() {
+            return {
+                pingData: '',
+                speedResults: '',
+                speedTestLoading: false,
+                ros: null,
+                connect: false,
+                currPose: {position: {}, orientation: {}},
+                height: 0,
+                towers: [],
+                selectedTower: null,
+                towerResponse: '',
+                modemLoading: false,
+                copterMode: ''
+            }
+        },
+        methods: {
+            saveHeight(value) {                
+                if (value == 0) {
+                    return
+                }
+                this.saveParam('/copter/height', + value)
+            },
+            manageCopter(isStart) {   
+                var addTwoIntsClient = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/start_stop_copter',
+                    serviceType : 'mavcmd/SetBool'
+                });
+
+                var request = new ROSLIB.ServiceRequest({data: isStart});
+
+                addTwoIntsClient.callService(request, function(result) {
+                    console.log('result');
+                    console.log(result);
+                });    
+            },
+            speedTest() {
+                var self = this
+                self.speedTestLoading = true
+                self.speedResults = ''
+
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/speed_test',
+                    serviceType : 'mavcmd/SetBool'
+                });
+
+                var request = new ROSLIB.ServiceRequest({data: true});
+                
+                client.callService(request, function(result) {                      
+                    self.speedResults = result.message
+                    self.speedTestLoading = false
+                }, function(error) {
+                    // console.log(error)
+                    self.speedResults = 'Ошибка: ' + error
+                    self.speedTestLoading = false
+                });    
+            },
+            modemConnect() {
+                this.modemLoading = true
+                var self = this
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/modem_connect',
+                    serviceType : 'mavcmd/SetBool'
+                });
+                self.towerResponse = ''
+                var request = new ROSLIB.ServiceRequest({data: true});
+                
+                client.callService(request, function(result) {                      
+                    self.towerResponse = result.message
+                    self.modemLoading = false
+                }, function(error) {                    
+                    self.towerResponse = 'Ошибка: ' + error
+                    self.modemLoading = false
+                });    
+            },
+            saveParam(name, value) {
+                console.log('save', name, value)
+                var param = new ROSLIB.Param({
+                    ros : this.ros,
+                    name : name
+                });            
+                param.set(value, function(e) {
+                    // console.log(e)
+                });
+            },
+            selectTower(tower) {
+                this.saveParam('/tower_id', tower.id)
+                this.selectedTower = tower
+            },
+            restart() {
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/copter/restart_program',
+                    serviceType : 'mavcmd/SetBool'
+                });
+
+                var request = new ROSLIB.ServiceRequest({data: true});
+
+                client.callService(request, function(result) {
+                    window.location.reload()
+                });    
+            }
+        },
+        mounted: function() {
+            var self = this
+            var robot_IP = location.hostname
+            var ros = this.ros = new ROSLIB.Ros({
+                // url : 'ws://localhost:9090'    
+                url : 'ws://' + robot_IP + ':9090'
+            });  
+
+            ros.on('connection', function() {
+                self.connect = true
+                console.log('Connected to websocket server.');
+            });
+
+            ros.on('error', function(error) {
+                self.connect = false
+                console.log('Error connecting to websocket server: ', error);
+            });
+
+            ros.on('close', function() {
+                self.connect = false
+                console.log('Connection to websocket server closed.');
+            });
+
+            var listener = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/ping_dns',
+                messageType : 'std_msgs/String'                
+            });
+
+            var self = this
+            listener.subscribe(function(message) {
+                self.pingData = message.data + ': ' + (new Date).toTimeString()                
+            });
+
+            var listenerCoord = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/mavros/local_position/pose',
+                messageType : 'geometry_msgs/PoseStamped',
+                throttle_rate: 1000
+            });
+            listenerCoord.subscribe(function(message) {
+                // console.log('coords!')
+                // console.log(message)
+                self.currPose = message.pose
+                // listenerCoord.unsubscribe()
+            });
+
+            var clientTower = new ROSLIB.Service({
+                ros : this.ros,
+                name : '/towers',
+                serviceType : 'mavcmd/SetBool'
+            });
+            var request = new ROSLIB.ServiceRequest({data: true});
+            clientTower.callService(request, function(result) {
+                self.towers = JSON.parse(result.message)
+                console.log('result');
+                console.log(JSON.parse(result.message));
+            });  
+            
+            var cmdVel = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/web_client_connection2',
+                messageType : 'std_msgs/Bool'
+            });
+
+            var connectMsg = new ROSLIB.Message({data: true});
+
+            setInterval(function() {            
+                cmdVel.publish(connectMsg);
+                }, 1000);
+
+
+            var height = new ROSLIB.Param({
+                ros : ros,
+                name : '/copter/height'
+            });
+            
+            // height.set(20, function(e) {
+            //     console.log(e)
+            // });
+            height.get(function(value) {
+                // console.log(value)
+                self.height = value
+            });
+
+
+            var listenerMode = new ROSLIB.Topic({
+                ros : this.ros,
+                name : '/mavros/state',
+                messageType : 'mavros_msgs/State'                
+            });
+            
+            listenerMode.subscribe(function(message) {                
+                self.copterMode = message.mode
+            });
+        }
+    }
+
+    app = Vue.createApp(Copter).mount('#app')
+</script>
+
+<style>
+    .active {
+        color: green
+    }
+    .border-3 {
+        border-width:3px !important;
+    }
+    hr.dashed {
+        border-top: 3px dashed #999;
+    }
+
+</style>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+1. Install Ubuntu Server 20.04 on RPI
+2. Manually login via ssh to add RPI IP to known hosts (RPI user - ubuntu)
+3. Install ansible on developer machine. 
+4. ansible-galaxy install rarrais.ros  (Install ros role for ansible)
+5. Add IP of RPI to /etc/ansible/hosts
+6. ansible-playbook server-setup.yml -u ubuntu --ask-pass  (enter password for ubuntu user on RPI)
+7. ansible-playbook ros.yml
+8. ansible-playbook other.yml
+9. ansible-playbook net.yml
