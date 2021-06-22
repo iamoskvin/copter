@@ -64,13 +64,18 @@
             <div>
                 Выберите вышку:
             </div>
-            <div v-for="tower in towers" @click="selectTower(tower)" >
-                <button :class="{active: (selectedTower && tower.id == selectedTower.id)}" class="my-2">
-                    {{ tower.lat }}
-                    {{ tower.long }}
+            <div v-for="tower in towers" >
+                <button :class="{active: (selectedTower && tower.id == selectedTower.id)}" class="my-2" @click="selectTower(tower)">
+                    <!-- {{ tower.lat }}
+                    {{ tower.long }} -->
+                    {{ tower.azimuth }}
                     {{ tower.name }}
                     {{ tower.cell_id }}                
                 </button>
+            </div>
+            <div class="my-2">
+                Азимут поворота
+                <input type="number" step="5" v-model="azimuth" @input="changeAzimut($event.target.value)">
             </div>
             <div>
                 <button @click="modemConnect" :disabled="modemLoading" class="btn btn-info">Подкючиться к ОПСОС</button>
@@ -131,7 +136,8 @@
                 selectedTower: null,
                 towerResponse: '',
                 modemLoading: false,
-                copterMode: ''
+                copterMode: '',
+                azimuth: ''
             }
         },
         methods: {
@@ -215,11 +221,8 @@
                 var height = new ROSLIB.Param({
                     ros : ros,
                     name : '/copter/height'
-                });
+                });                
                 
-                // height.set(20, function(e) {
-                //     console.log(e)
-                // });
                 height.get(function(value) {
                     // console.log(value)
                     self.height = value
@@ -235,7 +238,30 @@
                 listenerMode.subscribe(function(message) {                
                     self.copterMode = message.mode
                 });
+
+                var azim = new ROSLIB.Param({
+                    ros : ros,
+                    name : '/copter/azimuth'
+                });               
+                azim.get(function(value) {
+                    self.azimuth = value
+                });
+
+                var towerId = new ROSLIB.Param({
+                    ros : ros,
+                    name : '/tower_id'
+                });               
+                towerId.get(function(value) {
+                    if (!value) {
+                        return
+                    }
+                    var tower = self.towers.find(tower => tower.id == value)
+                    if (tower) {
+                        self.selectedTower = tower
+                    }
+                });
             },
+           
             saveHeight(value) {                
                 if (value == 0) {
                     return
@@ -310,6 +336,15 @@
             selectTower(tower) {
                 this.saveParam('/tower_id', tower.id)
                 this.selectedTower = tower
+                this.azimuth = ''
+            },
+            changeAzimut(value) {              
+                if (value === '') {
+                    return
+                }
+                this.selectedTower = null
+                this.saveParam('/tower_id', 0)
+                this.saveParam('/copter/azimuth', +value)
             },
             restart() {
                 var client = new ROSLIB.Service({

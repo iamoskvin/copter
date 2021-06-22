@@ -91,6 +91,7 @@ class CopterManager:
 
         goal_height = rospy.get_param('~height')
         tower_id = rospy.get_param('/tower_id', None)
+        azimuthParam = rospy.get_param('/copter/azimuth', None)        
         goal = PoseStamped()
 
         goal.header.seq = 1
@@ -100,30 +101,27 @@ class CopterManager:
         goal.pose.position.x = 0.0
         goal.pose.position.y = 0.0
         goal.pose.position.z = goal_height
-
+        
+        azimuth = None
         if (tower_id):
-            tower = self.towerManager.getTowerById(tower_id)
-            # print(tower)
-            azimuthDeg = tower['azimuth']+90 #NED to EUN
-            print(azimuthDeg)
-            azimuthRad = azimuthDeg/360.0*math.pi*2
-            print(azimuthRad)
-
+            tower = self.towerManager.getTowerById(tower_id)            
+            azimuth = tower['azimuth']            
+        elif (azimuthParam is not None):
+            azimuth = azimuthParam        
+        
+        if azimuth is not None:
+            azimuthDeg = azimuth+90 #NED to EUN            
+            azimuthRad = azimuthDeg/360.0*math.pi*2            
             q = transformations.quaternion_from_euler(0, 0, azimuthRad)
             goal.pose.orientation.x = q[0]
             goal.pose.orientation.y = q[1]
             goal.pose.orientation.z = q[2]
             goal.pose.orientation.w = q[3]
-            # goal.pose.orientation.x = 0.0
-            # goal.pose.orientation.y = 0.0
-            # goal.pose.orientation.z = 0.0
-            # goal.pose.orientation.w = 1.0
-            
         else:
             goal.pose.orientation.x = 0.0
             goal.pose.orientation.y = 0.0
             goal.pose.orientation.z = 0.0
-            goal.pose.orientation.w = 1.0
+            goal.pose.orientation.w = 1.0      
         
         self.pos_publisher.publish(goal) 
 
@@ -158,11 +156,11 @@ class TowerList():
             {'id': 1, 'area': '', 'cell_id': '', 'lat': 55.888573, 'long': 37.096052, 'azimuth': 30.444183, 'name': 'Турбодиспансер'},
             {'id': 2, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 202.676375, 'name': 'Дедовск'},
             
-            {'id': 3, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 0, 'name': 'Север0'},
-            {'id': 4, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 90, 'name': 'Запад90'},
-            {'id': 5, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 180, 'name': 'Юг180'},
-            {'id': 6, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 270, 'name': 'Восток270'},
-            {'id': 7, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': -90, 'name': 'Восток-90'},
+            # {'id': 3, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 0, 'name': 'Север0'},
+            # {'id': 4, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 90, 'name': 'Запад90'},
+            # {'id': 5, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 180, 'name': 'Юг180'},
+            # {'id': 6, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': 270, 'name': 'Восток270'},
+            # {'id': 7, 'area': '', 'cell_id': '', 'lat': 55.860412, 'long': 37.118994, 'azimuth': -90, 'name': 'Восток-90'},
 
         ]
         return True, json.dumps(self.towers)
