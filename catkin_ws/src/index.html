@@ -135,6 +135,107 @@
             }
         },
         methods: {
+            makeConnect() {
+                if (this.connect) {
+                    return
+                }
+                var self = this
+                var robot_IP = location.hostname
+                var ros = this.ros = new ROSLIB.Ros({
+                    // url : 'ws://localhost:9090'    
+                    url : 'ws://' + robot_IP + ':9090'
+                });  
+
+                ros.on('connection', function() {
+                    self.connect = true
+                    console.log('Connected to websocket server.');
+                });
+
+                ros.on('error', function(error) {
+                    self.connect = false
+                    console.log('Error connecting to websocket server: ', error);
+                });
+
+                ros.on('close', function() {
+                    self.connect = false
+                    self.currPose = {position: {}, orientation: {}};
+                    self.copterMode = ''
+                    console.log('Connection to websocket server closed.');
+                });
+
+                var listener = new ROSLIB.Topic({
+                    ros : this.ros,
+                    name : '/ping_dns',
+                    messageType : 'std_msgs/String'                
+                });
+
+                var self = this
+                listener.subscribe(function(message) {
+                    self.pingData = message.data + ': ' + (new Date).toTimeString()                
+                });
+
+                var listenerCoord = new ROSLIB.Topic({
+                    ros : this.ros,
+                    name : '/mavros/local_position/pose',
+                    messageType : 'geometry_msgs/PoseStamped',
+                    throttle_rate: 1000
+                });
+                listenerCoord.subscribe(function(message) {
+                    // console.log('coords!')
+                    // console.log(message)
+                    self.currPose = message.pose
+                    // listenerCoord.unsubscribe()
+                });
+
+                var clientTower = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/towers',
+                    serviceType : 'mavcmd/SetBool'
+                });
+                var request = new ROSLIB.ServiceRequest({data: true});
+                clientTower.callService(request, function(result) {
+                    self.towers = JSON.parse(result.message)
+                    console.log('result');
+                    console.log(JSON.parse(result.message));
+                });  
+                
+                var cmdVel = new ROSLIB.Topic({
+                    ros : this.ros,
+                    name : '/web_client_connection2',
+                    messageType : 'std_msgs/Bool'
+                });
+
+                var connectMsg = new ROSLIB.Message({data: true});
+
+                setInterval(function() {            
+                    cmdVel.publish(connectMsg);
+                }, 1000);
+
+
+                var height = new ROSLIB.Param({
+                    ros : ros,
+                    name : '/copter/height'
+                });
+                
+                // height.set(20, function(e) {
+                //     console.log(e)
+                // });
+                height.get(function(value) {
+                    // console.log(value)
+                    self.height = value
+                });
+
+
+                var listenerMode = new ROSLIB.Topic({
+                    ros : this.ros,
+                    name : '/mavros/state',
+                    messageType : 'mavros_msgs/State'                
+                });
+                
+                listenerMode.subscribe(function(message) {                
+                    self.copterMode = message.mode
+                });
+            },
             saveHeight(value) {                
                 if (value == 0) {
                     return
@@ -225,100 +326,11 @@
             }
         },
         mounted: function() {
-            var self = this
-            var robot_IP = location.hostname
-            var ros = this.ros = new ROSLIB.Ros({
-                // url : 'ws://localhost:9090'    
-                url : 'ws://' + robot_IP + ':9090'
-            });  
-
-            ros.on('connection', function() {
-                self.connect = true
-                console.log('Connected to websocket server.');
-            });
-
-            ros.on('error', function(error) {
-                self.connect = false
-                console.log('Error connecting to websocket server: ', error);
-            });
-
-            ros.on('close', function() {
-                self.connect = false
-                console.log('Connection to websocket server closed.');
-            });
-
-            var listener = new ROSLIB.Topic({
-                ros : this.ros,
-                name : '/ping_dns',
-                messageType : 'std_msgs/String'                
-            });
-
-            var self = this
-            listener.subscribe(function(message) {
-                self.pingData = message.data + ': ' + (new Date).toTimeString()                
-            });
-
-            var listenerCoord = new ROSLIB.Topic({
-                ros : this.ros,
-                name : '/mavros/local_position/pose',
-                messageType : 'geometry_msgs/PoseStamped',
-                throttle_rate: 1000
-            });
-            listenerCoord.subscribe(function(message) {
-                // console.log('coords!')
-                // console.log(message)
-                self.currPose = message.pose
-                // listenerCoord.unsubscribe()
-            });
-
-            var clientTower = new ROSLIB.Service({
-                ros : this.ros,
-                name : '/towers',
-                serviceType : 'mavcmd/SetBool'
-            });
-            var request = new ROSLIB.ServiceRequest({data: true});
-            clientTower.callService(request, function(result) {
-                self.towers = JSON.parse(result.message)
-                console.log('result');
-                console.log(JSON.parse(result.message));
-            });  
-            
-            var cmdVel = new ROSLIB.Topic({
-                ros : this.ros,
-                name : '/web_client_connection2',
-                messageType : 'std_msgs/Bool'
-            });
-
-            var connectMsg = new ROSLIB.Message({data: true});
-
+            var self = this;
             setInterval(function() {            
-                cmdVel.publish(connectMsg);
-                }, 1000);
-
-
-            var height = new ROSLIB.Param({
-                ros : ros,
-                name : '/copter/height'
-            });
+                self.makeConnect();
+            }, 3000);
             
-            // height.set(20, function(e) {
-            //     console.log(e)
-            // });
-            height.get(function(value) {
-                // console.log(value)
-                self.height = value
-            });
-
-
-            var listenerMode = new ROSLIB.Topic({
-                ros : this.ros,
-                name : '/mavros/state',
-                messageType : 'mavros_msgs/State'                
-            });
-            
-            listenerMode.subscribe(function(message) {                
-                self.copterMode = message.mode
-            });
         }
     }
 
