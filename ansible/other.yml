@@ -2,104 +2,104 @@
   remote_user: ansible
   become: true 
   tasks:	
-    # - name: install python modules
-    #   pip:
-    #     name: 
-    #       - pyserial
-    #       - speedtest-cli
-    #     executable: pip3
-    # - name: install nginx package
-    #   apt:
-    #     name: nginx
-    # - name: clone our repo
-    #   ansible.builtin.git:
-    #     repo: https://github.com/iamoskvin/copter.git
-    #     dest: /home/ansible/copter
-    #     force: yes
-    # - name: copy nginx config
-    #   template:
-    #     src: nginxconf.j2
-    #     dest: /etc/nginx/sites-available/copter
-    #     owner: root
-    #     group: root
-    #     mode: 0644
-    # - name: Create a symbolic link
-    #   file:
-    #     src: /etc/nginx/sites-available/copter
-    #     dest: /etc/nginx/sites-enabled/copter
-    #     owner: root
-    #     group: root
-    #     state: link
-    # - name: delete a symbolic link
-    #   file:
-    #     path: /etc/nginx/sites-enabled/default
-    #     state: absent
-    # - name: NGINX reload
-    #   service: 
-    #     name: nginx 
-    #     state: reloaded
+    - name: install python modules
+      pip:
+        name: 
+          - pyserial
+          - speedtest-cli
+        executable: pip3
+    - name: install nginx package
+      apt:
+        name: nginx
+    - name: clone our repo
+      ansible.builtin.git:
+        repo: https://github.com/iamoskvin/copter.git
+        dest: /home/ansible/copter
+        force: yes
+    - name: copy nginx config
+      template:
+        src: nginxconf.j2
+        dest: /etc/nginx/sites-available/copter
+        owner: root
+        group: root
+        mode: 0644
+    - name: Create a symbolic link
+      file:
+        src: /etc/nginx/sites-available/copter
+        dest: /etc/nginx/sites-enabled/copter
+        owner: root
+        group: root
+        state: link
+    - name: delete a symbolic link
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+    - name: NGINX reload
+      service: 
+        name: nginx 
+        state: reloaded
 
-    # - name: Build ROS workspaces
-    #   shell: source /opt/ros/noetic/setup.bash &&  catkin_make
-    #   args:
-    #     chdir: /home/ansible/copter/catkin_ws
-    #     executable: /bin/bash
-    #     creates: devel/setup.bash
+    - name: Build ROS workspaces
+      shell: source /opt/ros/noetic/setup.bash &&  catkin_make
+      args:
+        chdir: /home/ansible/copter/catkin_ws
+        executable: /bin/bash
+        creates: devel/setup.bash
    
-    # - name: Update .bashrc with
-    #   lineinfile:
-    #     path: /home/ansible/.bashrc
-    #     line: source /home/ansible/copter/catkin_ws/devel/setup.bash
+    - name: Update .bashrc with
+      lineinfile:
+        path: /home/ansible/.bashrc
+        line: source /home/ansible/copter/catkin_ws/devel/setup.bash
     
-    # - name: Download geobase for mavros
-    #   get_url:
-    #     url: https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
-    #     dest: /home/ansible/copter/
-    #     mode: '0740'
-    # - name: update geobase
-    #   shell: /home/ansible/copter/install_geographiclib_datasets.sh      
-    #   args:
-    #     executable: /bin/bash
+    - name: Download geobase for mavros
+      get_url:
+        url: https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+        dest: /home/ansible/copter/
+        mode: '0740'
+    - name: update geobase
+      shell: /home/ansible/copter/install_geographiclib_datasets.sh      
+      args:
+        executable: /bin/bash
         
-    # - name: install tf2 package
-    #   apt:
-    #     name: 
-    #       - ros-noetic-tf2-ros
-    #       - ros-noetic-tf-conversions
+    - name: install tf2 package
+      apt:
+        name: 
+          - ros-noetic-tf2-ros
+          - ros-noetic-tf-conversions
 
-    # - name: config.txt
-    #   template:
-    #     src: config.j2
-    #     dest: /boot/firmware/config.txt
+    - name: config.txt
+      template:
+        src: config.j2
+        dest: /boot/firmware/config.txt
 
-    # - name: cmdline.txt
-    #   template:
-    #     src: cmdline.j2
-    #     dest: /boot/firmware/cmdline.txt
+    - name: cmdline.txt
+      template:
+        src: cmdline.j2
+        dest: /boot/firmware/cmdline.txt
     
-    # - name: disable serial console
-    #   ansible.builtin.systemd:        
-    #     name: serial-getty@ttyS0.service
-    #     state: stopped
-    #     enabled: no
+    - name: disable serial console
+      ansible.builtin.systemd:        
+        name: serial-getty@ttyS0.service
+        state: stopped
+        enabled: no
 
-    # - name: Create a symbolic link for python
-    #   ansible.builtin.file:
-    #     src: /usr/bin/python3
-    #     dest: /usr/bin/python
-    #     owner: root
-    #     group: root
-    #     state: link
+    - name: Create a symbolic link for python
+      ansible.builtin.file:
+        src: /usr/bin/python3
+        dest: /usr/bin/python
+        owner: root
+        group: root
+        state: link
 
-    # - name: Update .bashrc with for ubuntu user
-    #   lineinfile:
-    #     path: /home/ubuntu/.bashrc
-    #     line: source /opt/ros/noetic/setup.bash
+    - name: Update .bashrc with for ubuntu user
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: source /opt/ros/noetic/setup.bash
 
-    # - name: Update .bashrc with for ubuntu user2
-    #   lineinfile:
-    #     path: /home/ubuntu/.bashrc
-    #     line: source /home/ansible/copter/catkin_ws/devel/setup.bash
+    - name: Update .bashrc with for ubuntu user2
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: source /home/ansible/copter/catkin_ws/devel/setup.bash
 
     - name: copter service copy file
       template:
