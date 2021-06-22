@@ -1,3 +1,5 @@
+All operations are carried out on the local PC under linux OS.
+
 1. Install Ubuntu Server 20.04 on RPI
 2. Manually login via ssh to add RPI IP to known hosts (RPI user - ubuntu)
 3. Install ansible on developer machine. 
