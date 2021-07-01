@@ -57,6 +57,9 @@
             <button @click="manageCopter(true)" class="btn btn-success mr-3">Запуск коптера</button>
             <button @click="manageCopter(false)" class="btn btn-danger">Посадка коптера</button>
         </div> 
+        <div>
+            <button @click="height3Meters" class="btn btn-primary mr-3">На 3 метра</button>
+        </div>
         
         <hr class="dashed">
 
@@ -147,6 +150,10 @@
             }
         },
         methods: {
+            height3Meters() {
+                this.height = 3
+                this.saveHeight()
+            },
             makeConnect() {
                 if (this.connect) {
                     return
