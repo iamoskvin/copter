@@ -90,6 +90,10 @@
                     {{ towerResponse }}
                 </div>
             </div>
+            <div class="my-3">
+                <button @click="modemRestart" :disabled="modemRestartLoading" class="btn btn-warning">Рестарт модема</button>
+                {{ modemRestartResponse }}
+            </div>
         </div>    
         
         <hr class="dashed">
@@ -146,7 +150,9 @@
                 towerResponse: '',
                 modemLoading: false,
                 copterMode: '',
-                azimuth: ''
+                azimuth: '',
+                modemRestartLoading: false,
+                modemRestartResponse: ''
             }
         },
         methods: {
@@ -334,6 +340,25 @@
                 }, function(error) {                    
                     self.towerResponse = 'Ошибка: ' + error
                     self.modemLoading = false
+                });    
+            },
+            modemRestart() {
+                this.modemRestartLoading = true
+                var self = this
+                var client = new ROSLIB.Service({
+                    ros : this.ros,
+                    name : '/copter/modem_restart',
+                    serviceType : 'mavcmd/SetBool'
+                });
+                self.modemRestartResponse = ''
+                var request = new ROSLIB.ServiceRequest({data: true});
+                
+                client.callService(request, function(result) {                      
+                    self.modemRestartResponse = result.message
+                    self.modemRestartLoading = false
+                }, function(error) {                    
+                    self.modemRestartResponse = 'Ошибка: ' + error
+                    self.modemRestartLoading = false
                 });    
             },
             saveParam(name, value) {

@@ -193,6 +193,13 @@ class ModemManager():
     def __init__(self, port):        
         self.ser = serial.Serial(port=port, baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=1,  rtscts=False, dsrdtr=False)
         self.service = rospy.Service('/modem_connect', SetBool, self.make_connect)
+        self.restart_service = rospy.Service('~modem_restart', SetBool, self.restart_modem)
+
+    def restart_modem(self, req):
+        os.system("sudo nmcli radio wwan off")
+        time.sleep(10)
+        os.system("sudo nmcli radio wwan on")
+        return [True, 'modem restarted']
 
     def checkModem(self):
         cmd = "AT\r"
